@@ -78,7 +78,6 @@ for i in range(10703023, 11000000):
         discount_price = "None"
         expire_date = "None"
         name = soup.find_all("div", class_="type02_p002")[0].h1.text
-        # print(name)
         basic_information = soup.find_all("div", class_="type02_p003")[0].ul
         lis = basic_information.find_all("li", recursive=False)
         for li in lis:

@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 import sqlalchemy
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm.session import Session, sessionmaker
-from sqlalchemy.orm.strategy_options import _UnboundLoad
+from sqlalchemy.orm.session import Session
 from sqlalchemy.orm import subqueryload
 from .models import (
     Base,
@@ -105,13 +104,6 @@ class SqlAlchemyStore:
         with Session(self.engine) as session:
             return self._get_user(session, user_id).to_entity()
 
-    def search_user(self, email):
-        with Session(self.engine) as session:
-            users = session.query(SqlUser).filter(SqlUser.email == email).all()
-            if len(users) == 0:
-                raise ResourceNotFoundException(f"User with email={email} not found")
-            return users[0].to_entity()
-
     def signin(self, email, password):
         with Session(self.engine) as session:
             users = session.query(SqlUser).filter(SqlUser.email == email).all()
@@ -148,7 +140,7 @@ class SqlAlchemyStore:
         password=None,
         address=None,
     ):
-        # TODO check email validation
+        # TODO check detailed validation
         with Session(self.engine) as session:
             user = self._get_user(session, user_id)
             if role is not None:
@@ -181,6 +173,13 @@ class SqlAlchemyStore:
                 session.rollback()
                 raise ServerException(str(e))
 
+    def search_user(self, email):
+        with Session(self.engine) as session:
+            users = session.query(SqlUser).filter(SqlUser.email == email).all()
+            if len(users) == 0:
+                raise ResourceNotFoundException(f"User with email={email} not found")
+            return users[0].to_entity()
+
     def create_book(self, body):
         validate_book(body)
         with Session(self.engine) as session:
@@ -205,17 +204,13 @@ class SqlAlchemyStore:
                         expire_date = datetime.strptime(
                             body["discount"]["expire_date"], dateFormatter
                         ) + timedelta(hours=23, minutes=59, seconds=59)
-                    discount = (
-                        [
-                            SqlDiscount(
-                                book_id=body.get("book_id"),
-                                discount_price=body.get("discount").get(
-                                    "discount_price"
-                                ),
-                                expire_date=expire_date,
-                            ),
-                        ],
-                    )
+                    discount = [
+                        SqlDiscount(
+                            book_id=body.get("book_id"),
+                            discount_price=body.get("discount").get("discount_price"),
+                            expire_date=expire_date,
+                        ),
+                    ]
                 if (
                     body.get("publishing_date") is not None
                     and body.get("publishing_date") != ""
@@ -239,7 +234,7 @@ class SqlAlchemyStore:
             )
 
             try:
-                session.add(book)
+                self._save_to_db(session, book)
                 session.commit()
             except Exception as e:
                 session.rollback()
@@ -252,10 +247,6 @@ class SqlAlchemyStore:
             .options([sqlalchemy.orm.subqueryload(SqlBook.discount)])
             .all()
         )
-        # [
-        #         SqlRegisteredModel.tags.any(SqlRegisteredModelTag.tag.contains(tag))
-        #         for tag in filter_tags
-        #     ]
         if len(books) == 0:
             raise ResourceNotFoundException(f"Book with id={book_id} not found")
         return books[0]
@@ -351,11 +342,7 @@ class SqlAlchemyStore:
                 raise ResourceNotFoundException(
                     f"Cart with user_id={user_id} and book_id={book_id} not found"
                 )
-            print(carts[0])
-            print(carts[0][0])
-            # print(type(carts[0]))
-            # print(type(carts[0][0]))
-            # return CartWithBook(carts[0][0].to_entity(), carts[0][1].to_entity)
+        return carts[0]
 
     def update_cart(self, body):
         validate_cart(body)
@@ -366,7 +353,7 @@ class SqlAlchemyStore:
             cart = self._get_cart(session, user_id, book_id)
             cart.number = number
             try:
-                session.add(cart)
+                self._save_to_db(session, cart)
                 session.commit()
             except Exception as e:
                 raise ServerException(str(e))
@@ -417,14 +404,14 @@ class SqlAlchemyStore:
                 session.rollback()
                 raise ServerException(str(e))
 
-    def get_order(self, order_id):
-        return self._get_order(session, order_id).to_entity()
-
     def _get_order(self, session, order_id):
         orders = session.query(SqlOrder).filter(SqlOrder.order_id == order_id).all()
         if len(orders) == 0:
             raise ResourceNotFoundException(f"Order with order_id={order_id} not found")
         return orders[0]
+
+    def get_order(self, order_id):
+        return self._get_order(session, order_id).to_entity()
 
     def delete_order(self, order_id):
         with Session(self.engine) as session:
@@ -440,7 +427,6 @@ class SqlAlchemyStore:
         with Session(self.engine) as session:
             self._get_user(session, user_id)
             orders = session.query(SqlOrder).filter(SqlOrder.user_id == user_id).all()
-
             return [order.to_entity() for order in orders]
 
     def create_review(self, user_id, book_id, comment):

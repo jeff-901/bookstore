@@ -1,0 +1,7 @@
+*.csv
+*.lock
+*.log
+*.env
+static
+templates
+*__pycache__
