@@ -21,7 +21,7 @@ function App() {
               <Snackbar
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
                 open={alert?.open}
-                autoHideDuration={3000}
+                autoHideDuration={1000}
                 onClose={() => setAlert({ ...alert, open: false })}
               >
                 <Alert variant="filled" severity={alert?.severity}>
