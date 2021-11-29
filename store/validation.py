@@ -1,14 +1,6 @@
 from .exceptions import InvalidParameterException
 
 
-def validate_order_item(item):
-
-    if len(item) != 2:
-        raise InvalidParameterException("order item must be len 2.")
-    if not isinstance(item[1], int):
-        raise InvalidParameterException("order_item[1] must be int.")
-
-
 def validate_comment(comment):
     if comment is None and not isinstance(comment, str):
         raise InvalidParameterException("parameter comment must be str.")
@@ -27,17 +19,17 @@ def validate_user(body):
         raise InvalidParameterException("User must contian role field.")
     if not isinstance(body.get("role"), int):
         raise InvalidParameterException("User's role must be an integer.")
-    if body.get("first_name") is None:
+    if body.get("first_name") is None or body.get("first_name") == "":
         raise InvalidParameterException("User must contian first_name field.")
-    if body.get("last_name") is None:
+    if body.get("last_name") is None or body.get("last_name") == "":
         raise InvalidParameterException("User must contian last_name field.")
-    if body.get("email") is None:
+    if body.get("email") is None or body.get("email") == "":
         raise InvalidParameterException("User must contian email field.")
-    if body.get("phone") is None:
+    if body.get("phone") is None or body.get("phone") == "":
         raise InvalidParameterException("User must contian phone field.")
-    if body.get("gender") is None:
+    if body.get("gender") is None or body.get("gender") == "":
         raise InvalidParameterException("User must contian gender field.")
-    if body.get("password") is None:
+    if body.get("password") is None or body.get("password") == "":
         raise InvalidParameterException("User must contian password field.")
 
 
@@ -93,7 +85,7 @@ def validate_order(body):
     if not isinstance(body.get("items"), list):
         raise InvalidParameterException("Order'items must be list.")
     for item in body.get("items"):
-        validate_order_item(body)
+        validate_order_item(item)
 
 
 def validate_order_item(body):
@@ -103,11 +95,7 @@ def validate_order_item(body):
         raise InvalidParameterException("OrderItem must contian book_id field.")
     if body.get("number") is None:
         raise InvalidParameterException("OrderItem must contian number field.")
-    if body.get("price") is None:
-        raise InvalidParameterException("OrderItem must contian price field.")
     if not isinstance(body.get("book_id"), int):
         raise InvalidParameterException("OrderItem's book_id must be an integer.")
     if not isinstance(body.get("number"), int):
         raise InvalidParameterException("OrderItem's number must be an integer.")
-    if not isinstance(body.get("price"), int):
-        raise InvalidParameterException("OrderItem's price must be an integer.")

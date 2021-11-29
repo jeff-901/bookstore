@@ -3,6 +3,7 @@ import sqlalchemy
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm.session import Session, sessionmaker
 from sqlalchemy.orm.strategy_options import _UnboundLoad
+from sqlalchemy.orm import subqueryload
 from .models import (
     Base,
     SqlBook,
@@ -13,6 +14,8 @@ from .models import (
     SqlReview,
     SqlUser,
 )
+
+from entities import CartWithBook
 from store.exceptions import (
     InvalidParameterException,
     ResourceNotFoundException,
@@ -78,7 +81,7 @@ class SqlAlchemyStore:
             try:
                 self._save_to_db(session, user)
                 session.commit()
-                return user
+                return user.to_entity()
             except Exception as e:
                 raise ServerException(str(e))
 
@@ -88,8 +91,8 @@ class SqlAlchemyStore:
             .filter(SqlUser.user_id == user_id)
             .options(
                 [
-                    sqlalchemy.orm.subqueryload(SqlUser.cart),
-                    sqlalchemy.orm.subqueryload(SqlUser.orders),
+                    subqueryload(SqlUser.cart),
+                    subqueryload(SqlUser.orders),
                 ]
             )
             .all()
@@ -109,14 +112,14 @@ class SqlAlchemyStore:
                 raise ResourceNotFoundException(f"User with email={email} not found")
             return users[0].to_entity()
 
-    def sign(self, email, password):
+    def signin(self, email, password):
         with Session(self.engine) as session:
             users = session.query(SqlUser).filter(SqlUser.email == email).all()
             if len(users) == 0:
                 raise ResourceNotFoundException(f"User with email={email} not found")
-            user = usres[0]
+            user = users[0]
             if user.password == password:
-                return user
+                return user.to_entity()
             else:
                 return False
 
@@ -300,24 +303,59 @@ class SqlAlchemyStore:
             self._get_book(session, book_id)
             cart = SqlCart(user_id=user_id, book_id=book_id, number=number)
             try:
-                self._save_to_db(session, cart)
-                session.commit()
-            except Exception as e:
-                session.rollback()
-                raise ServerException(str(e))
+                old_cart = self._get_cart(session, user_id, book_id)
+            except:
+                old_cart = None
+            if old_cart:
+                old_cart.number += cart.number
+                try:
+                    self._save_to_db(session, old_cart)
+                    session.commit()
+                except Exception as e:
+                    session.rollback()
+                    raise ServerException(str(e))
+            else:
+                try:
+                    self._save_to_db(session, cart)
+                    session.commit()
+                except Exception as e:
+                    session.rollback()
+                    raise ServerException(str(e))
 
     def _get_cart(self, session, user_id, book_id):
         carts = (
             session.query(SqlCart)
             .filter(SqlCart.user_id == user_id)
             .filter(SqlCart.book_id == book_id)
-            .all()
+            .all(),
         )
         if len(carts) == 0:
             raise ResourceNotFoundException(
                 f"Cart with user_id={user_id} and book_id={book_id} not found"
             )
         return carts[0]
+
+    def get_cart(self, user_id, book_id):
+        with Session(self.engine) as session:
+            self._get_user(session, user_id)
+            self._get_book(session, book_id)
+            carts = (
+                session.query(SqlCart, SqlBook)
+                .join(SqlBook)
+                .filter(SqlBook.book_id == SqlCart.book_id)
+                .filter(SqlCart.user_id == user_id)
+                .filter(SqlCart.book_id == book_id)
+                .all(),
+            )
+            if len(carts) == 0:
+                raise ResourceNotFoundException(
+                    f"Cart with user_id={user_id} and book_id={book_id} not found"
+                )
+            print(carts[0])
+            print(carts[0][0])
+            # print(type(carts[0]))
+            # print(type(carts[0][0]))
+            # return CartWithBook(carts[0][0].to_entity(), carts[0][1].to_entity)
 
     def update_cart(self, body):
         validate_cart(body)
@@ -341,6 +379,7 @@ class SqlAlchemyStore:
                 carts = session.query(SqlCart).filter(SqlCart.user_id == user_id).all()
             try:
                 for cart in carts:
+                    print(cart)
                     session.delete(cart)
                 session.commit()
             except Exception as e:
@@ -357,14 +396,17 @@ class SqlAlchemyStore:
             for order_item in body.get("items"):
                 book = self._get_book(session, order_item.get("book_id"))
                 number = order_item.get("number")
-                price = order_item.get("price")
+                if book.discount:
+                    price = book.discount[0].discount_price
+                else:
+                    price = book.price
                 sql_order_items.append(
                     SqlOrderItem(book_id=book.book_id, number=number, price=price)
                 )
                 total_price += number * price
             order = SqlOrder(
                 user_id=user_id,
-                time=datatime.now(),
+                time=datetime.now(),
                 total_price=total_price,
                 items=sql_order_items,
             )

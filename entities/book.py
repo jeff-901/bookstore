@@ -24,3 +24,18 @@ class Book:
         self.price = price
         self.discount_price = discount_price
         self.expire_date = expire_date
+
+    def to_dict(self):
+        return {
+            "book_id": self.book_id,
+            "ISBN": self.ISBN,
+            "name": self.name,
+            "author": self.author,
+            "author_original": self.author_original,
+            "translator": self.translator,
+            "publishing_house": self.publishing_house,
+            "publishing_date": self.publishing_date,
+            "price": self.price,
+            "discount_price": self.discount_price,
+            "expire_date": self.expire_date,
+        }

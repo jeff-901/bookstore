@@ -19,6 +19,7 @@ with open("book.csv", newline="") as f:
             "price",
         ],
     )
+    df = df.sort_values("book_id")
 
 
 def add_book(data):
@@ -32,9 +33,11 @@ def add_book(data):
         data=json.dumps(data),
     )
     # print(res.text)
-    if res.status_code != 201 and res.text[-14:] != "already eists.":
+    if res.status_code == 201:
         print(data)
-        print(res.text)
+    # elif res.status_code != 201 and res.text[-14:] != "already eists.":
+    # print(data)
+    # print(res.text)
 
 
 rows = df.to_dict(orient="records")

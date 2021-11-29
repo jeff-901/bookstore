@@ -33,9 +33,9 @@ class SqlUser(Base):
     password = Column(String(256), nullable=False)
     address = Column(String(256), nullable=True)
 
-    orders = relationship("SqlOrder", back_populates="user", cascade="all")
-    cart = relationship("SqlCart", back_populates="user", cascade="all")
-    reviews = relationship("SqlReview", back_populates="user", cascade="all")
+    orders = relationship("SqlOrder", cascade="all")
+    cart = relationship("SqlCart", cascade="all")
+    reviews = relationship("SqlReview", cascade="all")
 
     __table_args__ = (PrimaryKeyConstraint("user_id", name="user_pk"),)
 
@@ -79,8 +79,7 @@ class SqlOrder(Base):
     total_price = Column(Integer, nullable=False)
     time = Column(DATETIME(fsp=3), nullable=False)
 
-    items = relationship("SqlOrderItem", back_populates="order", cascade="all")
-    user: SqlUser = relationship("SqlUser", back_populates="orders", cascade="all")
+    items = relationship("SqlOrderItem", cascade="all")
 
     __table_args__ = (PrimaryKeyConstraint("order_id"),)
 
@@ -115,8 +114,9 @@ class SqlBook(Base):
     publishing_date = Column(DATETIME(fsp=3))
     price = Column(Integer, nullable=False)
 
-    discount = relationship("SqlDiscount", back_populates="book", cascade="all")
-    reviews = relationship("SqlReview", back_populates="book", cascade="all")
+    discount = relationship("SqlDiscount", cascade="all")
+    reviews = relationship("SqlReview", cascade="all")
+    cart = relationship("SqlCart", cascade="all")
 
     __table_args__ = (PrimaryKeyConstraint("book_id"),)
 
@@ -155,7 +155,6 @@ class SqlOrderItem(Base):
     )
     number = Column(Integer, nullable=False)
     price = Column(Integer, nullable=False)
-    order: SqlOrder = relationship("SqlOrder", back_populates="items", cascade="all")
 
     __table_args__ = (
         PrimaryKeyConstraint("order_id", "book_id", name="order_item_pk"),
@@ -168,15 +167,6 @@ class SqlOrderItem(Base):
             self.number,
             self.price,
         )
-
-    # def to_submarine_entity(self):
-    #     return Metric(
-    #         key=self.key,
-    #         value=self.value if not self.is_nan else float("nan"),
-    #         worker_index=self.worker_index,
-    #         timestamp=self.timestamp,
-    #         step=self.step,
-    #     )
 
 
 class SqlCart(Base):
@@ -194,17 +184,10 @@ class SqlCart(Base):
     )
     number = Column(Integer, nullable=False)
 
-    user: SqlUser = relationship("SqlUser", back_populates="cart", cascade="all")
-
     __table_args__ = (PrimaryKeyConstraint("user_id", "book_id", name="cart_pk"),)
 
     def __repr__(self):
-        return "<SqlCart({}, {}, {}, {})>".format(
-            self.user_id,
-            self.book_id,
-            self.number,
-            self.price,
-        )
+        return "<SqlCart({}, {}, {})>".format(self.user_id, self.book_id, self.number)
 
     def to_entity(self):
         return Cart(self.book_id, self.number)
@@ -221,7 +204,6 @@ class SqlDiscount(Base):
 
     expire_date = Column(DATETIME(fsp=3), nullable=True)
     discount_price = Column(Integer, nullable=False)
-    book: SqlBook = relationship("SqlBook", back_populates="discount", cascade="all")
 
     __table_args__ = (PrimaryKeyConstraint("book_id"),)
 
@@ -250,9 +232,6 @@ class SqlReview(Base):
     )
     create_time = Column(DATETIME(fsp=3), nullable=True)
     last_modified = Column(DATETIME(fsp=3), nullable=True)
-
-    user: SqlUser = relationship("SqlUser", back_populates="reviews", cascade="all")
-    book: SqlBook = relationship("SqlBook", back_populates="reviews", cascade="all")
 
     __table_args__ = (PrimaryKeyConstraint("user_id", "book_id", name="review_pk"),)
 

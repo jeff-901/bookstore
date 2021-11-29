@@ -13,3 +13,4 @@ pandas==1.2.4
 lxml==4.6.3
 pymysql==1.0.2
 python-dotenv==0.19.2
+Flask-Cors=3.0.10

@@ -8,7 +8,7 @@ import Checkbox from "@material-ui/core/Checkbox";
 import Link from "@material-ui/core/Link";
 import Grid from "@material-ui/core/Grid";
 import Button from "@material-ui/core/Button";
-// import { checkUser } from "../../axios.js";
+import { signIn } from "../api.js";
 import sha256 from "../Mysha256.js";
 
 function getModalStyle() {
@@ -39,11 +39,7 @@ function Login(props) {
   const [modalStyle, setModalStyle] = useState(getModalStyle);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [correct, setCorrect] = useState(true);
-
-  const handleOpen = () => {
-    props.setOpen(true);
-  };
+  const [helperText, setHelperText] = useState("");
 
   const handleClose = () => {
     props.setOpen(false);
@@ -51,16 +47,15 @@ function Login(props) {
 
   const handleSignIn = (e) => {
     e.preventDefault();
-    // checkUser(id, sha256(password)).then((result) => {
-    //   if (result !== 0) {
-    //     setCorrect(true);
-    //     props.setUser(result);
-    //     props.setMyCourse(JSON.parse(result.courses));
-    //   } else {
-    //     setPassword("");
-    //     setCorrect(false);
-    //   }
-    // });
+    signIn(email, password).then((result) => {
+      if (result.data) {
+        setHelperText("");
+        props.setUser(result.data);
+      } else {
+        setPassword("");
+        setHelperText(result.message);
+      }
+    });
   };
 
   const body = (
@@ -82,7 +77,7 @@ function Login(props) {
           variant="outlined"
           margin="normal"
           required
-          error={!correct}
+          error={helperText !== ""}
           fullWidth
           name="password"
           label="password"
@@ -91,8 +86,8 @@ function Login(props) {
           autoComplete="current-password"
           onInput={(e) => setPassword(e.target.value)}
           value={password}
-          helperText={correct ? "" : "Incorrect Email or password"}
-          onClick={() => setCorrect(true)}
+          helperText={helperText}
+          onClick={() => setHelperText("")}
         />
         <FormControlLabel
           control={<Checkbox value="remember" color="primary" />}
@@ -131,16 +126,14 @@ function Login(props) {
   );
 
   return (
-
-      <Modal
-        open={props.open}
-        onClose={handleClose}
-        aria-labelledby="simple-modal-title"
-        aria-describedby="simple-modal-description"
-      >
-        {body}
-      </Modal>
-
+    <Modal
+      open={props.open}
+      onClose={handleClose}
+      aria-labelledby="simple-modal-title"
+      aria-describedby="simple-modal-description"
+    >
+      {body}
+    </Modal>
   );
 }
 

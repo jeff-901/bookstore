@@ -1,5 +1,6 @@
 from flask import Flask, Blueprint, request, jsonify, render_template
 import flask
+from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from store.sqlalchemy_store import SqlAlchemyStore
@@ -10,10 +11,12 @@ from store.exceptions import (
 )
 
 app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 load_dotenv()
 
 url = os.getenv("CLEARDB_DATABASE_URL")
+url = "mysql+pymysql://bookstore:password@localhost:3306/bookstore"
 print(url)
 db = SqlAlchemyStore(f"{url}")
 
@@ -24,17 +27,17 @@ app.register_blueprint(api)
 
 @app.errorhandler(ResourceNotFoundException)
 def not_found(e):
-    return str(e), 404
+    return {"message": str(e)}, 404
 
 
 @app.errorhandler(InvalidParameterException)
 def invalid_parameter(e):
-    return str(e), 422
+    return {"message": str(e)}, 422
 
 
 @app.errorhandler(ServerException)
 def server_error(e):
-    return str(e), 500
+    return {"message": str(e)}, 500
 
 
 @app.route("/", methods=["GET"])
@@ -42,10 +45,10 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/api/user/signin", methods=["POST"])
+@app.route("/api/signin", methods=["POST"])
 def signin():
     body = request.get_json(force=True)
-    user = db.sign(body.get("email"), body.get("password"))
+    user = db.signin(body.get("email"), body.get("password"))
     if user:
         return build_reponse(user, f"Successfully signin")
     else:
@@ -82,8 +85,8 @@ def users():
         return build_reponse(users, "Success")
     else:
         body = request.get_json(force=True)
-        db.create_user(body)
-        return build_reponse(None, "Successfully create"), 201
+        user = db.create_user(body)
+        return build_reponse(user, "Successfully create"), 201
 
 
 @app.route("/api/search/user", methods=["GET"])
@@ -126,7 +129,7 @@ def search_books():
     return build_reponse(books, "Success")
 
 
-@app.route("/api/cart", methods=["POST", "DELETE", "PUT"])
+@app.route("/api/cart", methods=["POST", "DELETE", "PUT", "GET"])
 def carts():
     if request.method == "POST":
         body = request.get_json(force=True)
@@ -142,13 +145,19 @@ def carts():
             None,
             f"Successfully delete carts with user_id={user_id} and book_id={book_id}",
         )
-    else:
+    elif request.method == "PUT":
         body = request.get_json(force=True)
         db.update_cart(body)
         return build_reponse(
             None,
             f"Successfully update cart with user_id={body['user_id']} and book_id={body['book_id']}",
         )
+    else:
+        user_id = request.args.get("user_id")
+        book_id = request.args.get("book_id")
+        cart_item = db.get_cart(user_id, book_id)
+
+        return build_reponse(cart_item, "Success")
 
 
 @app.route("/api/order/<id>", methods=["GET", "DELETE"])
