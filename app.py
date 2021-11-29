@@ -16,8 +16,8 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 load_dotenv()
 
 url = os.getenv("CLEARDB_DATABASE_URL")
-url = "mysql+pymysql://bookstore:password@localhost:3306/bookstore"
-print(url)
+# url = "mysql+pymysql://bookstore:password@localhost:3306/bookstore"
+# print(url)
 db = SqlAlchemyStore(f"{url}")
 
 
