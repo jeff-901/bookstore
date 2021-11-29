@@ -13,12 +13,9 @@ app = Flask(__name__)
 
 load_dotenv()
 
-host = os.getenv("SQL_HOST")
-user = os.getenv("SQL_USER")
-password = os.getenv("SQL_PASSWORD")
-database = os.getenv("SQL_DATABASE")
+url = os.getenv("CLEARDB_DATABASE_URL")
 
-db = SqlAlchemyStore(f"mysql+pymysql://{user}:{password}@{host}/{database}")
+db = SqlAlchemyStore(f"mysql+pymysql://{url}")
 api = Blueprint("api", __name__, url_prefix="/api")
 app.register_blueprint(api)
 
