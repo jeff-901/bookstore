@@ -471,7 +471,3 @@ class SqlAlchemyStore:
             review = self._get_review(session, review_id)
             session.delete(review)
             session.commit()
-
-    # TODO
-    def search_review():
-        pass

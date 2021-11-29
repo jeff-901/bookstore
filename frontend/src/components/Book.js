@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getBook } from "../api";
+import Button from "@material-ui/core/Button";
 
 function Book(props) {
   let { bookId } = useParams();
+  const history = useNavigate()
   const [book, setBook] = useState({});
   useEffect(async () => {
     let data = await getBook(bookId);
@@ -45,6 +48,15 @@ function Book(props) {
       {book.discount_price ? <div>優惠價：{discount_text}</div> : <></>}
       {book.expire_date ? <div>優惠期限：{book.expire_date}</div> : <></>}
       {book.ISBN ? <div>ISBN：{book.ISBN}</div> : <></>}
+      <Button
+        onClick={() => {
+          history("/");
+        }}
+        color="primary"
+        variant="outlined"
+      >
+        回主畫面
+      </Button>
     </>
   );
 }

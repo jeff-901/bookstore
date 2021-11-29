@@ -91,14 +91,13 @@ class SqlOrder(Base):
             self.time,
         )
 
-    # def to_submarine_entity(self):
-    #     return Metric(
-    #         key=self.key,
-    #         value=self.value if not self.is_nan else float("nan"),
-    #         worker_index=self.worker_index,
-    #         timestamp=self.timestamp,
-    #         step=self.step,
-    #     )
+    def to_entity(self):
+        return Order(
+            order_id=self.order_id,
+            total_price=self.total_price,
+            time=self.time,
+            items=self.items,
+        )
 
 
 class SqlBook(Base):

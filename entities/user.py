@@ -21,4 +21,4 @@ class User:
         self.gender = gender
         self.address = address
         self.cart = [cart_item.to_entity().to_dict() for cart_item in cart] or []
-        self.orders = [order.order_id for order in orders] or []
+        self.orders = [order.to_entity().to_dict() for order in orders] or []

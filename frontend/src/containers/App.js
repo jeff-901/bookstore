@@ -35,13 +35,9 @@ function App() {
         />
 
         {/* <Home /> */}
-        <Route
-          exact
-          path="/user/:userId"
-          element={<User user={user} />}
-        ></Route>
-        <Route exact path="/book/:bookId" element={<Book />}></Route>
-        <Route exact path="/order/:orderId"></Route>
+        <Route exact path="/user/:userId" element={<User user={user} />} />
+        <Route exact path="/book/:bookId" element={<Book />} />
+        <Route exact path="/order/:orderId" />
       </Routes>
     </BrowserRouter>
   );

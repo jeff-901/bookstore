@@ -19,13 +19,17 @@ function User(props) {
   const history = useNavigate();
 
   useEffect(async () => {
-    const data = await getUser(userId);
+    refresh();
+  }, [userId]);
+
+  const refresh = async () => {
+    let data = await getUser(userId);
     if (data.data) {
       if (data.data.cart == undefined) {
         data.data.cart = [];
       }
-      if (data.data.order == undefined) {
-        data.data.order = [];
+      if (data.data.orders == undefined) {
+        data.data.orders = [];
       }
       let cart_items = [];
       let _user = data.data;
@@ -40,30 +44,18 @@ function User(props) {
           current_price: price,
         });
       }
+      for (let i = 0; i < _user.orders.length; i++) {
+        for (let j = 0; j < _user.orders[i].items.length; j++) {
+          let book = await getBook(_user.orders[i].items[j].book_id);
+          book = book.data;
+          _user.orders[i].items[j].name = book.name;
+        }
+      }
       setUser(_user);
       setCart(cart_items);
     } else {
       setUser(null);
     }
-  }, [userId]);
-
-  const refresh = async () => {
-    let data = await getUser(user.user_id);
-    setUser(data.data);
-    let cart_items = [];
-    let _user = data.data;
-    for (let i = 0; i < _user.cart.length; i++) {
-      let book = await getBook(_user.cart[i].book_id);
-      book = book.data;
-      let price = book.discount_price ? book.discount_price : book.price;
-      cart_items.push({
-        book_id: _user.cart[i].book_id,
-        number: _user.cart[i].number,
-        book: book,
-        current_price: price,
-      });
-    }
-    setCart(cart_items);
   };
 
   const handleBuy = async () => {
@@ -74,7 +66,6 @@ function User(props) {
       let book_id = cart[i].book_id;
       let book = await getBook(book_id);
       book = book.data;
-
       if (book.discount_price) {
         price = book.discount_price;
       } else {
@@ -84,7 +75,6 @@ function User(props) {
     }
     let res = await createOrder(user.user_id, items);
     if (res.message == "Successfully create") {
-      console.log(user.user_id);
       res = await deleteCartItem(user.user_id);
       refresh();
     }
@@ -154,7 +144,44 @@ function User(props) {
         </TableContainer>
       </div>
 
-      <div>歷史訂單：{user.order ? user.order : ""}</div>
+      <div>
+        歷史訂單：
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 650 }} aria-label="simple table">
+            <TableHead>
+              <TableRow>
+                <TableCell>訂單標號</TableCell>
+                <TableCell align="right">內容</TableCell>
+                <TableCell align="right">時間</TableCell>
+                <TableCell align="right">總價</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {user.orders.map((row) => {
+                return (
+                  <TableRow
+                    key={row.order_id}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      {row.order_id}
+                    </TableCell>
+                    <TableCell align="right">
+                      {row.items.map((ele) => {
+                        return (
+                          <div>{`${ele.name}: ${ele.price}*${ele.number}`}</div>
+                        );
+                      })}
+                    </TableCell>
+                    <TableCell align="right">{row.time}</TableCell>
+                    <TableCell align="right">{row.total_price}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </div>
       <Button onClick={handleBuy} color="primary" variant="outlined">
         結帳
       </Button>
