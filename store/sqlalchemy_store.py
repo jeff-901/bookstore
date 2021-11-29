@@ -33,7 +33,19 @@ class SqlAlchemyStore:
     def __init__(self, db_uri):
         self.db_uri = db_uri
         self.engine = sqlalchemy.create_engine(db_uri)
-        self.session_maker = sqlalchemy.orm.sessionmaker(bind=self.engine)
+        insp = sqlalchemy.inspect(self.engine)
+        expected_tables = {
+            SqlBook.__tablename__,
+            SqlCart.__tablename__,
+            SqlDiscount.__tablename__,
+            SqlOrder.__tablename__,
+            SqlOrderItem.__tablename__,
+            SqlReview.__tablename__,
+            SqlUser.__tablename__,
+        }
+        for table in expected_tables:
+            if table not in set(insp.get_table_names()):
+                Base.metadata.tables[table].create(bind=self.engine)
 
     def _save_to_db(self, session, objs):
         if type(objs) is list:
@@ -96,6 +108,17 @@ class SqlAlchemyStore:
             if len(users) == 0:
                 raise ResourceNotFoundException(f"User with email={email} not found")
             return users[0].to_entity()
+
+    def sign(self, email, password):
+        with Session(self.engine) as session:
+            users = session.query(SqlUser).filter(SqlUser.email == email).all()
+            if len(users) == 0:
+                raise ResourceNotFoundException(f"User with email={email} not found")
+            user = usres[0]
+            if user.password == password:
+                return user
+            else:
+                return False
 
     def list_user(self):
         with Session(self.engine) as session:
@@ -324,8 +347,9 @@ class SqlAlchemyStore:
                 session.rollback()
                 raise ServerException(str(e))
 
-    def create_order(self, user_id, body):
+    def create_order(self, body):
         validate_order(body)
+        user_id = body.get("user_id")
         with Session(self.engine) as session:
             user = self._get_user(session, user_id)
             sql_order_items = []

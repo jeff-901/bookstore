@@ -31,6 +31,7 @@ def add_book(data):
         headers={"Content-Type": "application/json"},
         data=json.dumps(data),
     )
+    # print(res.text)
     if res.status_code != 201 and res.text[-14:] != "already eists.":
         print(data)
         print(res.text)

@@ -37,7 +37,7 @@ function Login(props) {
   const classes = useStyles();
   // getModalStyle is not a pure function, we roll the style only on the first render
   const [modalStyle, setModalStyle] = useState(getModalStyle);
-  const [id, setId] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [correct, setCorrect] = useState(true);
 
@@ -76,7 +76,7 @@ function Login(props) {
           name="email"
           autoComplete="email"
           autoFocus
-          onInput={(e) => setId(e.target.value)}
+          onInput={(e) => setEmail(e.target.value)}
         />
         <TextField
           variant="outlined"
@@ -91,7 +91,7 @@ function Login(props) {
           autoComplete="current-password"
           onInput={(e) => setPassword(e.target.value)}
           value={password}
-          helperText={correct ? "" : "Incorrect Id or password"}
+          helperText={correct ? "" : "Incorrect Email or password"}
           onClick={() => setCorrect(true)}
         />
         <FormControlLabel

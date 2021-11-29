@@ -14,8 +14,10 @@ app = Flask(__name__)
 load_dotenv()
 
 url = os.getenv("CLEARDB_DATABASE_URL")
+print(url)
+db = SqlAlchemyStore(f"{url}")
 
-db = SqlAlchemyStore(f"mysql+pymysql://{url}")
+
 api = Blueprint("api", __name__, url_prefix="/api")
 app.register_blueprint(api)
 
@@ -38,6 +40,16 @@ def server_error(e):
 @app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
+
+
+@app.route("/api/user/signin", methods=["POST"])
+def signin():
+    body = request.get_json(force=True)
+    user = db.sign(body.get("email"), body.get("password"))
+    if user:
+        return build_reponse(user, f"Successfully signin")
+    else:
+        return build_reponse(None, f"Incorrect password"), 401
 
 
 @app.route("/api/user/<id>", methods=["GET", "DELETE", "PUT"])
@@ -149,15 +161,15 @@ def order(id):
         return build_reponse(None, f"Successfully delete order with order_id={id}")
 
 
-@app.route("/api/order", methods=["GET", "POST"])
+@app.route("/api/order", methods=["POST"])
 def orders():
-    if request.method == "GET":
-        orders = db.list_order()
-        return build_reponse(orders, "Success")
-    else:
-        body = request.get_json(force=True)
-        db.create_order(body)
-        return build_reponse(None, "Successfully create"), 201
+    # if request.method == "GET":
+    #     orders = db.list_order()
+    #     return build_reponse(orders, "Success")
+    # if:
+    body = request.get_json(force=True)
+    db.create_order(body)
+    return build_reponse(None, "Successfully create"), 201
 
 
 @app.route("/api/search/order", methods=["GET"])

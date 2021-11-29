@@ -31,7 +31,7 @@ class SqlUser(Base):
     phone = Column(String(64), nullable=False)
     gender = Column(String(32), nullable=False)
     password = Column(String(256), nullable=False)
-    address = Column(String(256), nullable=False)
+    address = Column(String(256), nullable=True)
 
     orders = relationship("SqlOrder", back_populates="user", cascade="all")
     cart = relationship("SqlCart", back_populates="user", cascade="all")
