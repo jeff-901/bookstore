@@ -34,3 +34,11 @@ python3 app.py
   - models: sqlalchemy models
   - sqlalchemy_store: support every operation to db
   - validation: validate the input data from requests
+
+- frontend:
+  - src: modules for React components and containers
+
+### Deploy address
+
+[app link](https://bookstore-jeff-901.herokuapp.com)
+> Caution: you might need to wait for the server and database to warm up
